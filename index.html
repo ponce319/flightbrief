@@ -523,7 +523,7 @@ function JiggleTile(_ref) {
     registerChipRect = _ref.registerChipRect;
   const ref = useRef(null);
   useEffect(function () {
-    if (ref.current && registerChipRect) {
+    if (editing && ref.current && registerChipRect) {
       registerChipRect(sectionId, id, ref.current.getBoundingClientRect());
     }
   });
@@ -982,7 +982,7 @@ function SumChipSection(_ref) {
 // (an object of sectionId -> [chipId,...]). Returns the current
 // layout, a drag-state object for SumChipSection, and a DragGhost
 // element to render at the root.
-function useDragLayout(layout, setLayout, registry, drag0, setDrag, sectionRects, chipRects) {
+function useDragLayout(layout, setLayout, registry, drag0, setDrag, sectionRects, chipRects, onActivity) {
   const registerRect = function (sectionId, el) {
     sectionRects.current[sectionId] = el.getBoundingClientRect();
   };
@@ -1016,8 +1016,8 @@ function useDragLayout(layout, setLayout, registry, drag0, setDrag, sectionRects
   // excluding the chip currently being dragged, and return the index
   // at which the dragged chip should be inserted (before or after
   // that neighbor, based on relative position).
-  const findInsertIndex = function (targetSection, draggedChipId, x, y) {
-    const arr = (layout[targetSection] || []).filter(function (id) {
+  const findInsertIndex = function (currentLayout, targetSection, draggedChipId, x, y) {
+    const arr = (currentLayout[targetSection] || []).filter(function (id) {
       return id !== draggedChipId;
     });
     if (arr.length === 0) return 0;
@@ -1043,6 +1043,7 @@ function useDragLayout(layout, setLayout, registry, drag0, setDrag, sectionRects
     return bestIdx;
   };
   const onDragStart = function (chipId, sectionId, x, y, rect) {
+    if (onActivity) onActivity();
     setDrag({
       active: true,
       chipId: chipId,
@@ -1050,28 +1051,54 @@ function useDragLayout(layout, setLayout, registry, drag0, setDrag, sectionRects
       targetSection: sectionId,
       x: x,
       y: y,
-      width: rect.width
+      width: rect.width,
+      previewLayout: layout,
+      // local working copy, not persisted until drop
+      raf: null
     });
   };
   const onDragMove = function (x, y) {
     setDrag(function (prev) {
       if (!prev) return prev;
-      const targetSection = findTargetSection(x, y) || prev.targetSection;
-      const insertIndex = findInsertIndex(targetSection, prev.chipId, x, y);
-      // Live-reflow: move the chip in the layout now so other chips
-      // shift to make room while dragging.
-      const next = moveChip(layout, prev.chipId, targetSection, insertIndex);
-      const changed = JSON.stringify(next) !== JSON.stringify(layout);
-      if (changed) setLayout(next);
+      if (prev.raf) return Object.assign({}, prev, {
+        pendingX: x,
+        pendingY: y
+      });
+      const raf = requestAnimationFrame(function () {
+        if (onActivity) onActivity();
+        setDrag(function (cur) {
+          if (!cur) return cur;
+          const px = cur.pendingX !== undefined ? cur.pendingX : x;
+          const py = cur.pendingY !== undefined ? cur.pendingY : y;
+          const targetSection = findTargetSection(px, py) || cur.targetSection;
+          const insertIndex = findInsertIndex(cur.previewLayout, targetSection, cur.chipId, px, py);
+          const next = moveChip(cur.previewLayout, cur.chipId, targetSection, insertIndex);
+          return Object.assign({}, cur, {
+            x: px,
+            y: py,
+            targetSection: targetSection,
+            previewLayout: next,
+            raf: null,
+            pendingX: undefined,
+            pendingY: undefined
+          });
+        });
+      });
       return Object.assign({}, prev, {
         x: x,
         y: y,
-        targetSection: targetSection
+        raf: raf
       });
     });
   };
   const onDragEnd = function () {
-    setDrag(null);
+    setDrag(function (prev) {
+      if (prev) {
+        if (prev.raf) cancelAnimationFrame(prev.raf);
+        if (prev.previewLayout) setLayout(prev.previewLayout);
+      }
+      return null;
+    });
   };
   const drag = drag0 ? Object.assign({}, drag0, {
     onDragStart: onDragStart,
@@ -1085,6 +1112,10 @@ function useDragLayout(layout, setLayout, registry, drag0, setDrag, sectionRects
     onDragEnd: onDragEnd,
     registerChipRect: registerChipRect
   };
+
+  // While dragging, render using the live preview order so other tiles
+  // shift in real time; the persisted layout is only updated on drop.
+  const effectiveLayout = drag0 && drag0.previewLayout ? drag0.previewLayout : layout;
   let ghost = null;
   if (drag0) {
     const renderChip = registry[drag0.chipId];
@@ -1098,7 +1129,8 @@ function useDragLayout(layout, setLayout, registry, drag0, setDrag, sectionRects
   return {
     drag: drag,
     registerRect: registerRect,
-    ghost: ghost
+    ghost: ghost,
+    effectiveLayout: effectiveLayout
   };
 }
 
@@ -1414,8 +1446,8 @@ setAd({...snapAa,v2:"",v2plus15:"",vref30:"",vfup:"",vy:"",engFail:""});setAa({.
     setPerfSub: setPerfSub
   };
   const registry = buildChipRegistry(registryCtx);
-  const dragDep = useDragLayout(layoutDep, setTileLayoutDep, registry, dragStateDep, setDragStateDep, sectionRectsDep, chipRectsDep);
-  const dragArr = useDragLayout(layoutArr, setTileLayoutArr, registry, dragStateArr, setDragStateArr, sectionRectsArr, chipRectsArr);
+  const dragDep = useDragLayout(layoutDep, setTileLayoutDep, registry, dragStateDep, setDragStateDep, sectionRectsDep, chipRectsDep, resetLockTimer);
+  const dragArr = useDragLayout(layoutArr, setTileLayoutArr, registry, dragStateArr, setDragStateArr, sectionRectsArr, chipRectsArr, resetLockTimer);
   return React.createElement("div", {
     style: {
       background: S.bg,
@@ -1498,7 +1530,7 @@ setAd({...snapAa,v2:"",v2plus15:"",vref30:"",vfup:"",vy:"",engFail:""});setAa({.
     label: "Departure",
     color: S.amber,
     onHeaderClick: go("PERF REF"),
-    chipIds: layoutDep.dep,
+    chipIds: dragDep.effectiveLayout.dep,
     registry: registry,
     editing: sumLayoutEdit,
     drag: dragDep.drag,
@@ -1508,7 +1540,7 @@ setAd({...snapAa,v2:"",v2plus15:"",vref30:"",vfup:"",vy:"",engFail:""});setAa({.
     label: "Crew & souls",
     color: S.muted,
     onHeaderClick: go("DISPATCH"),
-    chipIds: layoutDep.crew,
+    chipIds: dragDep.effectiveLayout.crew,
     registry: registry,
     editing: sumLayoutEdit,
     drag: dragDep.drag,
@@ -1523,7 +1555,7 @@ setAd({...snapAa,v2:"",v2plus15:"",vref30:"",vfup:"",vy:"",engFail:""});setAa({.
     label: "Performance",
     color: "#9B7FB8",
     onHeaderClick: go("PERF REF"),
-    chipIds: layoutDep.perf,
+    chipIds: dragDep.effectiveLayout.perf,
     registry: registry,
     editing: sumLayoutEdit,
     drag: dragDep.drag,
@@ -1684,7 +1716,7 @@ setAd({...snapAa,v2:"",v2plus15:"",vref30:"",vfup:"",vy:"",engFail:""});setAa({.
     label: "Arrival",
     color: S.blue,
     onHeaderClick: go("CCI"),
-    chipIds: layoutArr.arr,
+    chipIds: dragArr.effectiveLayout.arr,
     registry: registry,
     editing: sumLayoutEdit,
     drag: dragArr.drag,
@@ -1747,7 +1779,7 @@ setAd({...snapAa,v2:"",v2plus15:"",vref30:"",vfup:"",vy:"",engFail:""});setAa({.
     label: "Approach",
     color: S.blue,
     onHeaderClick: go("PERF REF"),
-    chipIds: layoutArr.app,
+    chipIds: dragArr.effectiveLayout.app,
     registry: registry,
     editing: sumLayoutEdit,
     drag: dragArr.drag,
