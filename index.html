@@ -519,8 +519,14 @@ function JiggleTile(_ref) {
     isDragging = _ref.isDragging,
     dragStyle = _ref.dragStyle,
     children = _ref.children,
-    jitter = _ref.jitter;
+    jitter = _ref.jitter,
+    registerChipRect = _ref.registerChipRect;
   const ref = useRef(null);
+  useEffect(function () {
+    if (ref.current && registerChipRect) {
+      registerChipRect(sectionId, id, ref.current.getBoundingClientRect());
+    }
+  });
   const handlePointerDown = function (e) {
     if (!editing) return;
     e.preventDefault();
@@ -539,10 +545,11 @@ function JiggleTile(_ref) {
   const wrapperStyle = {
     position: "relative",
     touchAction: editing ? "none" : "auto",
-    opacity: isDragging ? 0.35 : 1,
+    opacity: isDragging ? 0 : 1,
     animation: editing && !isDragging ? "ekJiggle " + (0.18 + jitter) + "s ease-in-out infinite alternate" : "none",
     transformOrigin: "center center",
-    cursor: editing ? "grab" : undefined
+    cursor: editing ? "grab" : undefined,
+    transition: isDragging ? "none" : "transform 0.15s ease"
   };
   return /*#__PURE__*/React.createElement("div", {
     ref: ref,
@@ -964,7 +971,8 @@ function SumChipSection(_ref) {
       jitter: idx % 5 * 0.03,
       onDragStart: drag.onDragStart,
       onDragMove: drag.onDragMove,
-      onDragEnd: drag.onDragEnd
+      onDragEnd: drag.onDragEnd,
+      registerChipRect: drag.registerChipRect
     }, renderChip());
   }), extra || null));
 }
@@ -974,11 +982,17 @@ function SumChipSection(_ref) {
 // (an object of sectionId -> [chipId,...]). Returns the current
 // layout, a drag-state object for SumChipSection, and a DragGhost
 // element to render at the root.
-function useDragLayout(layout, setLayout, registry, drag0, setDrag, sectionRects) {
+function useDragLayout(layout, setLayout, registry, drag0, setDrag, sectionRects, chipRects) {
   const registerRect = function (sectionId, el) {
     sectionRects.current[sectionId] = el.getBoundingClientRect();
   };
-  const findTarget = function (x, y) {
+  const registerChipRect = function (sectionId, chipId, rect) {
+    chipRects.current[chipId] = {
+      sectionId: sectionId,
+      rect: rect
+    };
+  };
+  const findTargetSection = function (x, y) {
     let best = null,
       bestDist = Infinity;
     Object.keys(sectionRects.current).forEach(function (sectionId) {
@@ -997,6 +1011,37 @@ function useDragLayout(layout, setLayout, registry, drag0, setDrag, sectionRects
     });
     return best;
   };
+
+  // Find the chip in `targetSection` whose center is nearest (x,y),
+  // excluding the chip currently being dragged, and return the index
+  // at which the dragged chip should be inserted (before or after
+  // that neighbor, based on relative position).
+  const findInsertIndex = function (targetSection, draggedChipId, x, y) {
+    const arr = (layout[targetSection] || []).filter(function (id) {
+      return id !== draggedChipId;
+    });
+    if (arr.length === 0) return 0;
+    let best = null,
+      bestDist = Infinity,
+      bestIdx = arr.length;
+    arr.forEach(function (chipId, idx) {
+      const entry = chipRects.current[chipId];
+      if (!entry || !entry.rect) return;
+      const r = entry.rect;
+      const cx = r.left + r.width / 2,
+        cy = r.top + r.height / 2;
+      const dist = Math.pow(x - cx, 2) + Math.pow(y - cy, 2);
+      if (dist < bestDist) {
+        bestDist = dist;
+        best = chipId;
+        // Insert before this chip if pointer is left of / above its center,
+        // otherwise after it.
+        const before = x < cx || Math.abs(x - cx) < r.width * 0.3 && y < cy;
+        bestIdx = before ? idx : idx + 1;
+      }
+    });
+    return bestIdx;
+  };
   const onDragStart = function (chipId, sectionId, x, y, rect) {
     setDrag({
       active: true,
@@ -1011,45 +1056,34 @@ function useDragLayout(layout, setLayout, registry, drag0, setDrag, sectionRects
   const onDragMove = function (x, y) {
     setDrag(function (prev) {
       if (!prev) return prev;
-      const target = findTarget(x, y) || prev.targetSection;
+      const targetSection = findTargetSection(x, y) || prev.targetSection;
+      const insertIndex = findInsertIndex(targetSection, prev.chipId, x, y);
+      // Live-reflow: move the chip in the layout now so other chips
+      // shift to make room while dragging.
+      const next = moveChip(layout, prev.chipId, targetSection, insertIndex);
+      const changed = JSON.stringify(next) !== JSON.stringify(layout);
+      if (changed) setLayout(next);
       return Object.assign({}, prev, {
         x: x,
         y: y,
-        targetSection: target
+        targetSection: targetSection
       });
     });
   };
   const onDragEnd = function () {
-    setDrag(function (prev) {
-      if (!prev) return null;
-      const targetSection = prev.targetSection || prev.fromSection;
-      // Determine insertion index: find which existing chip in the
-      // target section is closest to the drop point, insert before/after it.
-      const targetArr = layout[targetSection] || [];
-      let insertIndex = targetArr.length;
-      const r = sectionRects.current[targetSection];
-      if (r) {
-        // Simple heuristic: based on vertical position within the
-        // drop zone, place at start if dropped in top half, else end.
-        // (Chips reflow in a wrap layout, so precise index targeting
-        // isn't critical — most reorders are "move near here".)
-        const relY = prev.y - r.top;
-        insertIndex = relY < r.height / 2 ? 0 : targetArr.length;
-      }
-      const next = moveChip(layout, prev.chipId, targetSection, insertIndex);
-      setLayout(next);
-      return null;
-    });
+    setDrag(null);
   };
   const drag = drag0 ? Object.assign({}, drag0, {
     onDragStart: onDragStart,
     onDragMove: onDragMove,
-    onDragEnd: onDragEnd
+    onDragEnd: onDragEnd,
+    registerChipRect: registerChipRect
   }) : {
     active: false,
     onDragStart: onDragStart,
     onDragMove: onDragMove,
-    onDragEnd: onDragEnd
+    onDragEnd: onDragEnd,
+    registerChipRect: registerChipRect
   };
   let ghost = null;
   if (drag0) {
@@ -1073,7 +1107,7 @@ const resetLockTimer=function(){clearTimeout(lockTimerRef.current);lockTimerRef.
 const fieldRefs=useRef({});const regRef=function(id){return function(el){if(el)fieldRefs.current[id]=el;};};const goField=function(targetTab,fieldId,subTab,subSetter){return function(){setTab(targetTab);if(subTab&&subSetter)subSetter(subTab);setTimeout(function(){const el=fieldRefs.current[fieldId];if(el){el.scrollIntoView({behavior:"smooth",block:"center"});el.style.outline="2px solid #BA7517";el.style.outlineOffset="2px";setTimeout(function(){el.style.outline="none";},1500);}},100);};};// Dispatch state
 const _useState22=useState({dept:"",dest:"",deptUtcOffset:"",destUtcOffset:"",flightNo:"",acReg:"",ofpNum:"",ofpReclr:"0",ofpEdto:"0",b77:"W",mel:"",fltTime:"",fltLvls:"",fdp:"",stn:"Dubai",lrv:"Non-LRV",deptLt:"",deptUtc:"",destLt:"",destUtc:"",opCapt:"",augCapt:"",augFo:"",purs:"",csvCapt:"",csvFo:"",crew:"",pax:"",minusPax:"",prepA:false,prepB:false,prepC:false,prepD:false,prepE:false}),_useState23=_slicedToArray(_useState22,2),d=_useState23[0],setD=_useState23[1];const _useState24=useState({stand:"",rwy:"",adElev:"",ta:"",trl:"",v2:"",v2plus15:"",vref30:"",vfup:"",vy:"",engFail:""}),_useState25=_slicedToArray(_useState24,2),ad=_useState25[0],setAd=_useState25[1];const _useState26=useState({rwy:"",adElev:"",ta:"",trl:"",vref30:"",vref20plus5:""}),_useState27=_slicedToArray(_useState26,2),aa=_useState27[0],setAa=_useState27[1];const _useState28=useState({info:[""],threats:[""],atis:""}),_useState29=_slicedToArray(_useState28,2),cd=_useState29[0],setCd=_useState29[1];const _useState30=useState({info:[""],threats:[""],reti:"NO",pkg:"",altn:"",atis:""}),_useState31=_slicedToArray(_useState30,2),ca=_useState31[0],setCa=_useState31[1];// Fuel — 3 alternate blocks + configurable burn rate
 const _useState32=useState([emptyAltn(),emptyAltn(),emptyAltn()]),_useState33=_slicedToArray(_useState32,2),altns=_useState33[0],setAltns=_useState33[1];const updateAltn=function(i){return function(data){return setAltns(function(prev){return prev.map(function(a,idx){return idx===i?data:a;});});};};const _useState34=useState("6.2"),_useState35=_slicedToArray(_useState34,2),fuelBurn=_useState35[0],setFuelBurn=_useState35[1];const _useState36=useState(""),_useState37=_slicedToArray(_useState36,2),finalRsv=_useState37[0],setFinalRsv=_useState37[1];// Perf — includes moved MAC/RTOW from AOI dep performance
-const _useState38=useState({mac:"",rtow:"",qnh:"",oat:"",elev:"",depCalcElev:"",arrQnh:"",arrOat:"",arrCalcElev:""}),_useState39=_slicedToArray(_useState38,2),perf=_useState39[0],setPerf=_useState39[1];const _useState40=useState({fwd:"",aft:"",bulk:""}),_useState41=_slicedToArray(_useState40,2),dgr=_useState41[0],setDgr=_useState41[1];const _useState42=useState([]),_useState43=_slicedToArray(_useState42,2),dgrItems=_useState43[0],setDgrItems=_useState43[1];const _useState44=useState({techlog:false,security:false,walkround:false,rtow:false,brief:false,prelim:false,fuelFig:false,opt:false,atcClr:false,loadsheet:false,dataEntry:false,techlogFinal:false,pa:false}),_useState45=_slicedToArray(_useState44,2),pre=_useState45[0],setPre=_useState45[1];const _useState46=useState({fo:false,augCrew:false,pursCC:false,atc:false,ncc:false,dispatcher:false,asm:false,fdm:false,mpod:false,techPilot:false,gms:false,cro:false}),_useState47=_slicedToArray(_useState46,2),res=_useState47[0],setRes=_useState47[1];const _useStateLayoutDep=useState(DEFAULT_LAYOUT_DEP),_useStateLayoutDep2=_slicedToArray(_useStateLayoutDep,2),tileLayoutDep=_useStateLayoutDep2[0],setTileLayoutDep=_useStateLayoutDep2[1];const _useStateLayoutArr=useState(DEFAULT_LAYOUT_ARR),_useStateLayoutArr2=_slicedToArray(_useStateLayoutArr,2),tileLayoutArr=_useStateLayoutArr2[0],setTileLayoutArr=_useStateLayoutArr2[1];const _dragDep=_useState(null),dragStateDep=_dragDep[0],setDragStateDep=_dragDep[1];const _dragArr=_useState(null),dragStateArr=_dragArr[0],setDragStateArr=_dragArr[1];const sectionRectsDep=useRef({});const sectionRectsArr=useRef({});// ICAO selection handlers — auto-fill UTC offset
+const _useState38=useState({mac:"",rtow:"",qnh:"",oat:"",elev:"",depCalcElev:"",arrQnh:"",arrOat:"",arrCalcElev:""}),_useState39=_slicedToArray(_useState38,2),perf=_useState39[0],setPerf=_useState39[1];const _useState40=useState({fwd:"",aft:"",bulk:""}),_useState41=_slicedToArray(_useState40,2),dgr=_useState41[0],setDgr=_useState41[1];const _useState42=useState([]),_useState43=_slicedToArray(_useState42,2),dgrItems=_useState43[0],setDgrItems=_useState43[1];const _useState44=useState({techlog:false,security:false,walkround:false,rtow:false,brief:false,prelim:false,fuelFig:false,opt:false,atcClr:false,loadsheet:false,dataEntry:false,techlogFinal:false,pa:false}),_useState45=_slicedToArray(_useState44,2),pre=_useState45[0],setPre=_useState45[1];const _useState46=useState({fo:false,augCrew:false,pursCC:false,atc:false,ncc:false,dispatcher:false,asm:false,fdm:false,mpod:false,techPilot:false,gms:false,cro:false}),_useState47=_slicedToArray(_useState46,2),res=_useState47[0],setRes=_useState47[1];const _useStateLayoutDep=useState(DEFAULT_LAYOUT_DEP),_useStateLayoutDep2=_slicedToArray(_useStateLayoutDep,2),tileLayoutDep=_useStateLayoutDep2[0],setTileLayoutDep=_useStateLayoutDep2[1];const _useStateLayoutArr=useState(DEFAULT_LAYOUT_ARR),_useStateLayoutArr2=_slicedToArray(_useStateLayoutArr,2),tileLayoutArr=_useStateLayoutArr2[0],setTileLayoutArr=_useStateLayoutArr2[1];const _dragDep=_useState(null),dragStateDep=_dragDep[0],setDragStateDep=_dragDep[1];const _dragArr=_useState(null),dragStateArr=_dragArr[0],setDragStateArr=_dragArr[1];const sectionRectsDep=useRef({});const sectionRectsArr=useRef({});const chipRectsDep=useRef({});const chipRectsArr=useRef({});// ICAO selection handlers — auto-fill UTC offset
 const handleDeptSelect=function(apt){const offset=getAptOffset(apt);setD(function(p){return{...p,dept:apt.icao,deptUtcOffset:String(offset)};});setAd(function(p){return{...p,adElev:apt.elev!==null?String(apt.elev):p.adElev,ta:apt.ta!==null?String(apt.ta):p.ta,trl:apt.trl!==null?apt.trl:p.trl};});if(apt.elev!==null)setPerf(function(p){return{...p,depCalcElev:String(apt.elev)};});};const handleDestSelect=function(apt){const offset=getAptOffset(apt);setD(function(p){return{...p,dest:apt.icao,destUtcOffset:String(offset)};});setAa(function(p){return{...p,adElev:apt.elev!==null?String(apt.elev):p.adElev,ta:apt.ta!==null?String(apt.ta):p.ta,trl:apt.trl!==null?apt.trl:p.trl};});if(apt.elev!==null)setPerf(function(p){return{...p,arrCalcElev:String(apt.elev)};});};const handleDepElevChange=function(val){setAd(function(p){return{...p,adElev:val};});setPerf(function(p){return{...p,depCalcElev:val};});};const handleArrElevChange=function(val){setAa(function(p){return{...p,adElev:val};});setPerf(function(p){return{...p,arrCalcElev:val};});};// Derive local times from UTC + offset
 const deriveLocal=function(utcHHMM,offset){if(!utcHHMM||utcHHMM.length!==4||offset==="")return"";const h=parseInt(utcHHMM.slice(0,2)),m=parseInt(utcHHMM.slice(2,4));if(isNaN(h)||isNaN(m))return"";const off=parseFloat(offset);if(isNaN(off))return"";let totalMin=h*60+m+Math.round(off*60);totalMin=(totalMin%1440+1440)%1440;return String(Math.floor(totalMin/60)).padStart(2,"0")+String(totalMin%60).padStart(2,"0");};const deriveUtc=function(ltHHMM,offset){if(!ltHHMM||ltHHMM.length!==4||offset==="")return"";const h=parseInt(ltHHMM.slice(0,2)),m=parseInt(ltHHMM.slice(2,4));if(isNaN(h)||isNaN(m))return"";const off=parseFloat(offset);if(isNaN(off))return"";let totalMin=h*60+m-Math.round(off*60);totalMin=(totalMin%1440+1440)%1440;return String(Math.floor(totalMin/60)).padStart(2,"0")+String(totalMin%60).padStart(2,"0");};const _useState48=_useState("utc"),_useState49=_slicedToArray(_useState48,2),deptLastEdited=_useState49[0],setDeptLastEdited=_useState49[1];const _useState50=_useState("utc"),_useState51=_slicedToArray(_useState50,2),destLastEdited=_useState51[0],setDestLastEdited=_useState51[1];const deptLocal=useMemo(function(){return deptLastEdited==="utc"?deriveLocal(d.deptUtc,d.deptUtcOffset):"";},[d.deptUtc,d.deptUtcOffset,deptLastEdited]);const destLocal=useMemo(function(){return destLastEdited==="utc"?deriveLocal(d.destUtc,d.destUtcOffset):"";},[d.destUtc,d.destUtcOffset,destLastEdited]);const deptUtcDerived=useMemo(function(){return deptLastEdited==="lt"?deriveUtc(d.deptLt,d.deptUtcOffset):"";},[d.deptLt,d.deptUtcOffset,deptLastEdited]);const destUtcDerived=useMemo(function(){return destLastEdited==="lt"?deriveUtc(d.destLt,d.destUtcOffset):"";},[d.destLt,d.destUtcOffset,destLastEdited]);useEffect(function(){if(deptLocal)setD(function(p){return{...p,deptLt:deptLocal};});},[deptLocal]);useEffect(function(){if(destLocal)setD(function(p){return{...p,destLt:destLocal};});},[destLocal]);useEffect(function(){if(deptUtcDerived)setD(function(p){return{...p,deptUtc:deptUtcDerived};});},[deptUtcDerived]);useEffect(function(){if(destUtcDerived)setD(function(p){return{...p,destUtc:destUtcDerived};});},[destUtcDerived]);const reportTime=useMemo(function(){if(!d.deptUtc)return"";const mins=d.stn==="Dubai"?85:d.lrv==="LRV"?75:60;return subtractMins(d.deptUtc,mins);},[d.deptUtc,d.stn,d.lrv]);const ofpStr="".concat((d.ofpNum||"000").padStart(3,"0"),"/").concat(d.ofpReclr||"0","/").concat(d.ofpEdto||"0");const depPa=useMemo(function(){const q=parseFloat(perf.qnh),e=parseFloat(perf.depCalcElev);if(!isNaN(q)&&!isNaN(e))return Math.round((1013-q)*30+e);return null;},[perf.qnh,perf.depCalcElev]);const depDa=useMemo(function(){if(depPa===null)return null;const oat=parseFloat(perf.oat),e=parseFloat(perf.depCalcElev);if(isNaN(oat)||isNaN(e))return null;return Math.round((oat-(15-e/500))*120+depPa);},[depPa,perf.oat,perf.depCalcElev]);const arrPa=useMemo(function(){const q=parseFloat(perf.arrQnh),e=parseFloat(perf.arrCalcElev);if(!isNaN(q)&&!isNaN(e))return Math.round((1013-q)*30+e);return null;},[perf.arrQnh,perf.arrCalcElev]);const arrDa=useMemo(function(){if(arrPa===null)return null;const oat=parseFloat(perf.arrOat),e=parseFloat(perf.arrCalcElev);if(isNaN(oat)||isNaN(e))return null;return Math.round((oat-(15-e/500))*120+arrPa);},[arrPa,perf.arrOat,perf.arrCalcElev]);const pa=depPa,da=depDa;const handleV2=function(val){const v=parseFloat(val);setAd(function(p){return{...p,v2:val,v2plus15:!isNaN(v)?String(v+15):""};});};const handleVref30=function(val){const v=parseFloat(val);setAd(function(p){return{...p,vref30:val,vfup:!isNaN(v)?String(v+80):p.vfup,vy:!isNaN(v)?String(v+140):p.vy};});};const totalPax=(parseInt(d.crew)||0)+(parseInt(d.pax)||0);const finalPax=totalPax-(parseInt(d.minusPax)||0);const ud=upd(setD),uad=upd(setAd),uaa=upd(setAa),up_=upd(setPerf);const preCount=Object.values(pre).filter(Boolean).length;const prepCount=[d.prepA,d.prepB,d.prepC,d.prepD,d.prepE].filter(Boolean).length;const resCount=Object.values(res).filter(Boolean).length;const reportRule=d.stn==="Dubai"?"Dubai — always −1h 25m":d.lrv==="LRV"?"Outstation LRV — −1h 15m":"Outstation non-LRV — −1h 00m";// DGR item handlers
 const addDgrItem=function(){return setDgrItems(function(p){return[...p,emptyDgrItem()];});};const removeDgrItem=function(i){return setDgrItems(function(p){return p.filter(function(_,idx){return idx!==i;});});};const updateDgrItem=function(i,key,val){return setDgrItems(function(p){return p.map(function(item,idx){return idx===i?{...item,[key]:val}:item;});});};const safeDgrItems=Array.isArray(dgrItems)?dgrItems:[];const hasDgr=safeDgrItems.some(function(i){return i.drillNo||i.drillLetter;});const dgrByHold=useMemo(function(){const h={FWD:[],AFT:[],Bulk:[]};safeDgrItems.forEach(function(item){if(item.hold&&(item.drillNo||item.drillLetter)){const dn=item.drillNo?"Drill ".concat(item.drillNo):"";const dl=item.drillLetter?"Ltr ".concat(item.drillLetter):"";h[item.hold].push([dn,dl].filter(Boolean).join(" / "));}});return h;},[dgrItems]);// Navigation helper for summary tab
@@ -1380,8 +1414,8 @@ setAd({...snapAa,v2:"",v2plus15:"",vref30:"",vfup:"",vy:"",engFail:""});setAa({.
     setPerfSub: setPerfSub
   };
   const registry = buildChipRegistry(registryCtx);
-  const dragDep = useDragLayout(layoutDep, setTileLayoutDep, registry, dragStateDep, setDragStateDep, sectionRectsDep);
-  const dragArr = useDragLayout(layoutArr, setTileLayoutArr, registry, dragStateArr, setDragStateArr, sectionRectsArr);
+  const dragDep = useDragLayout(layoutDep, setTileLayoutDep, registry, dragStateDep, setDragStateDep, sectionRectsDep, chipRectsDep);
+  const dragArr = useDragLayout(layoutArr, setTileLayoutArr, registry, dragStateArr, setDragStateArr, sectionRectsArr, chipRectsArr);
   return React.createElement("div", {
     style: {
       background: S.bg,
