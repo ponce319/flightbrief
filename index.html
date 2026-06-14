@@ -1097,6 +1097,22 @@ setAd({...snapAa,v2:"",v2plus15:"",vref30:"",vfup:"",vy:"",engFail:""});setAa({.
       });
     });
   };
+  const sumDepSwapped = collapsed.__depSwap || false;
+  const toggleDepSwap = function () {
+    return setCollapsed(function (prev) {
+      return Object.assign({}, prev, {
+        __depSwap: !prev.__depSwap
+      });
+    });
+  };
+  const sumArrSwapped = collapsed.__arrSwap || false;
+  const toggleArrSwap = function () {
+    return setCollapsed(function (prev) {
+      return Object.assign({}, prev, {
+        __arrSwap: !prev.__arrSwap
+      });
+    });
+  };
   const act = function () {
     if (!summaryLocked) resetLockTimer();
   };
@@ -1413,7 +1429,37 @@ setAd({...snapAa,v2:"",v2plus15:"",vref30:"",vfup:"",vy:"",engFail:""});setAa({.
     }
   }, sumLayoutEdit ? "Drag chips to rearrange \u2014 tap LAYOUT DONE when finished" : "Editing enabled \u2014 auto-locks after 60s"),
   // ── DEP phase ──────────────────────────────────────────────
-  sumPhase === "DEP" && React.createElement("div", null, React.createElement(SumChipSection, {
+  sumPhase === "DEP" && React.createElement("div", null, React.createElement("div", {
+    style: {
+      position: "relative",
+      display: "flex",
+      gap: 10,
+      marginBottom: 4
+    }
+  }, sumLayoutEdit && React.createElement("button", {
+    onClick: toggleDepSwap,
+    style: {
+      position: "absolute",
+      top: "50%",
+      left: "50%",
+      transform: "translate(-50%,-50%)",
+      zIndex: 10,
+      background: "#9B7FB8",
+      border: "none",
+      borderRadius: 20,
+      padding: "6px 12px",
+      cursor: "pointer",
+      fontSize: 13,
+      fontWeight: 700,
+      color: "#fff",
+      boxShadow: "0 2px 8px rgba(0,0,0,0.4)"
+    }
+  }, "\u21C4"), React.createElement("div", {
+    style: {
+      flex: 1,
+      order: sumDepSwapped ? 2 : 1
+    }
+  }, React.createElement(SumChipSection, {
     sectionId: "dep",
     label: "Departure",
     color: S.amber,
@@ -1433,7 +1479,12 @@ setAd({...snapAa,v2:"",v2plus15:"",vref30:"",vfup:"",vy:"",engFail:""});setAa({.
     editing: sumLayoutEdit,
     drag: dragDep.drag,
     registerRect: dragDep.registerRect
-  }), React.createElement(SumChipSection, {
+  })), React.createElement("div", {
+    style: {
+      flex: 1,
+      order: sumDepSwapped ? 1 : 2
+    }
+  }, React.createElement(SumChipSection, {
     sectionId: "perf",
     label: "Performance",
     color: "#9B7FB8",
@@ -1443,7 +1494,7 @@ setAd({...snapAa,v2:"",v2plus15:"",vref30:"",vfup:"",vy:"",engFail:""});setAa({.
     editing: sumLayoutEdit,
     drag: dragDep.drag,
     registerRect: dragDep.registerRect
-  }), dragDep.ghost, React.createElement(SumSection, {
+  }))), dragDep.ghost, React.createElement(SumSection, {
     label: "DEP ATIS",
     color: S.muted,
     onClick: goField("CCI", "cd.atis", "Departure", setCciSub)
@@ -1564,7 +1615,37 @@ setAd({...snapAa,v2:"",v2plus15:"",vref30:"",vfup:"",vy:"",engFail:""});setAa({.
     }, val));
   }))),
   // ── ARR phase ──────────────────────────────────────────────
-  sumPhase === "ARR" && React.createElement("div", null, React.createElement(SumChipSection, {
+  sumPhase === "ARR" && React.createElement("div", null, React.createElement("div", {
+    style: {
+      position: "relative",
+      display: "flex",
+      gap: 10,
+      marginBottom: 4
+    }
+  }, sumLayoutEdit && React.createElement("button", {
+    onClick: toggleArrSwap,
+    style: {
+      position: "absolute",
+      top: "50%",
+      left: "50%",
+      transform: "translate(-50%,-50%)",
+      zIndex: 10,
+      background: "#9B7FB8",
+      border: "none",
+      borderRadius: 20,
+      padding: "6px 12px",
+      cursor: "pointer",
+      fontSize: 13,
+      fontWeight: 700,
+      color: "#fff",
+      boxShadow: "0 2px 8px rgba(0,0,0,0.4)"
+    }
+  }, "\u21C4"), React.createElement("div", {
+    style: {
+      flex: 1,
+      order: sumArrSwapped ? 2 : 1
+    }
+  }, React.createElement(SumChipSection, {
     sectionId: "arr",
     label: "Arrival",
     color: S.blue,
@@ -1622,7 +1703,12 @@ setAd({...snapAa,v2:"",v2plus15:"",vref30:"",vfup:"",vy:"",engFail:""});setAa({.
         color: hldNeg ? S.red : S.green
       })));
     }))
-  }), React.createElement(SumChipSection, {
+  })), React.createElement("div", {
+    style: {
+      flex: 1,
+      order: sumArrSwapped ? 1 : 2
+    }
+  }, React.createElement(SumChipSection, {
     sectionId: "app",
     label: "Approach",
     color: S.blue,
@@ -1632,7 +1718,7 @@ setAd({...snapAa,v2:"",v2plus15:"",vref30:"",vfup:"",vy:"",engFail:""});setAa({.
     editing: sumLayoutEdit,
     drag: dragArr.drag,
     registerRect: dragArr.registerRect
-  }), dragArr.ghost, React.createElement(SumSection, {
+  }))), dragArr.ghost, React.createElement(SumSection, {
     label: "ARR ATIS",
     color: S.muted,
     onClick: goField("CCI", "ca.atis", "Arrival", setCciSub)
