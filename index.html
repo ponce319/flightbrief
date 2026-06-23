@@ -1844,11 +1844,7 @@ setAd({...snapAa,v2:"",v2plus15:"",vref30:"",vfup:"",vy:"",engFail:""});setAa({.
     locked: summaryLocked,
     timestamp: atisTimestamps.dep,
     onActivity: act
-  }), (cd.info.some(function (t) {
-    return t.trim();
-  }) || cd.threats.some(function (t) {
-    return t.trim();
-  })) && React.createElement(SumSection, {
+  }), (hasText(cd.info) || hasText(cd.threats)) && React.createElement(SumSection, {
     label: 'DEP threats & info',
     color: S.orange,
     onClick: goField('CCI', 'cd.threats', 'Departure', setCciSub)
@@ -2064,11 +2060,7 @@ setAd({...snapAa,v2:"",v2plus15:"",vref30:"",vfup:"",vy:"",engFail:""});setAa({.
     locked: summaryLocked,
     timestamp: atisTimestamps.arr,
     onActivity: act
-  }), (ca.info.some(function (t) {
-    return t.trim();
-  }) || ca.threats.some(function (t) {
-    return t.trim();
-  }) || ca.altn) && React.createElement(SumSection, {
+  }), (hasText(ca.info) || hasText(ca.threats) || ca.altn) && React.createElement(SumSection, {
     label: 'ARR threats & info',
     color: S.orange,
     onClick: goField('CCI', 'ca.threats', 'Arrival', setCciSub)
