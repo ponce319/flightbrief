@@ -552,11 +552,8 @@ function JiggleTile(_ref2) {
     // If not holding, this was a tap — let normal click/focus through
   };
   var wrapperStyle = {
-    display: "inline-flex",
-    width: "max-content",
-    alignItems: "flex-start",
-    flexShrink: 0,
-    flexGrow: 0,
+    margin: 0,
+    padding: 0,
     touchAction: editing ? "none" : "auto",
     opacity: isDragging ? 0 : 1,
     boxShadow: editing && !isDragging ? "0 0 0 1.5px " + (isTarget ? "#C0A0E0" : "#9B7FB855") : "none",
