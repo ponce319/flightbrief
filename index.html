@@ -1164,7 +1164,7 @@ function useDragLayout(layout, setLayout, registry, drag0, setDrag, sectionRects
   };
 }
 
-function FlightBrief(){const _useState10=useState("DISPATCH"),_useState11=_slicedToArray(_useState10,2),tab=_useState11[0],setTab=_useState11[1];const _useState12=useState("Departure"),_useState13=_slicedToArray(_useState12,2),cciSub=_useState13[0],setCciSub=_useState13[1];const _useState14=useState("Departure"),_useState15=_slicedToArray(_useState14,2),perfSub=_useState15[0],setPerfSub=_useState15[1];const _useState16=useState({}),_useState17=_slicedToArray(_useState16,2),collapsed=_useState17[0],setCollapsed=_useState17[1];const _useState18=useState(true),_useState19=_slicedToArray(_useState18,2),summaryLocked=_useState19[0],setSummaryLocked=_useState19[1];const _useStateTO=useState([]),_useStateTOa=_slicedToArray(_useStateTO,2),tabOrder=_useStateTOa[0],setTabOrder=_useStateTOa[1];const _useStateTN=useState({}),_useStateTNa=_slicedToArray(_useStateTN,2),tabNames=_useStateTNa[0],setTabNames=_useStateTNa[1];const _useStateTE=useState(false),_useStateTEa=_slicedToArray(_useStateTE,2),tabEditMode=_useStateTEa[0],setTabEditMode=_useStateTEa[1];const _useState20=useState({dep:null,arr:null}),_useState21=_slicedToArray(_useState20,2),atisTimestamps=_useState21[0],setAtisTimestamps=_useState21[1];const lockTimerRef=useRef(null);const barHoldTimer=useRef(null);const barPointerStart=useRef(null);const tabDragState=useRef(null);const tabDragAnimFrame=useRef(null);const lastTapTime=useRef({});const sumGlobalDragMove=useRef(null);const sumGlobalDragEnd=useRef(null);const sumDraggingActive=useRef(false);useEffect(function(){if(!sumDraggingActive.current)return;var hm=function(e){if(sumGlobalDragMove.current)sumGlobalDragMove.current(e.clientX,e.clientY);};var hu=function(){if(sumGlobalDragEnd.current)sumGlobalDragEnd.current();};window.addEventListener("pointermove",hm,{passive:false});window.addEventListener("pointerup",hu);window.addEventListener("pointercancel",hu);return function(){window.removeEventListener("pointermove",hm);window.removeEventListener("pointerup",hu);window.removeEventListener("pointercancel",hu);};});const toggleCollapse=function(key){return setCollapsed(function(p){return{...p,[key]:!p[key]};});};// Auto-lock after 60s of inactivity when unlocked
+function FlightBrief(){const _useState10=useState("DISPATCH"),_useState11=_slicedToArray(_useState10,2),tab=_useState11[0],setTab=_useState11[1];const _useState12=useState("Departure"),_useState13=_slicedToArray(_useState12,2),cciSub=_useState13[0],setCciSub=_useState13[1];const _useState14=useState("Departure"),_useState15=_slicedToArray(_useState14,2),perfSub=_useState15[0],setPerfSub=_useState15[1];const _useState16=useState({}),_useState17=_slicedToArray(_useState16,2),collapsed=_useState17[0],setCollapsed=_useState17[1];const _useState18=useState(true),_useState19=_slicedToArray(_useState18,2),summaryLocked=_useState19[0],setSummaryLocked=_useState19[1];const _useStateTO=useState([]),_useStateTOa=_slicedToArray(_useStateTO,2),tabOrder=_useStateTOa[0],setTabOrder=_useStateTOa[1];const _useStateTN=useState({}),_useStateTNa=_slicedToArray(_useStateTN,2),tabNames=_useStateTNa[0],setTabNames=_useStateTNa[1];const _useStateTE=useState(false),_useStateTEa=_slicedToArray(_useStateTE,2),tabEditMode=_useStateTEa[0],setTabEditMode=_useStateTEa[1];const _rta=_useState(null),tabRenameTarget=_rta[0],setTabRenameTarget=_rta[1];const _rtv=_useState(""),tabRenameValue=_rtv[0],setTabRenameValue=_rtv[1];const _useState20=useState({dep:null,arr:null}),_useState21=_slicedToArray(_useState20,2),atisTimestamps=_useState21[0],setAtisTimestamps=_useState21[1];const lockTimerRef=useRef(null);const tabDragState=useRef(null);const tabDragAnimFrame=useRef(null);const sumGlobalDragMove=useRef(null);const sumGlobalDragEnd=useRef(null);const sumDraggingActive=useRef(false);useEffect(function(){if(!sumDraggingActive.current)return;var hm=function(e){if(sumGlobalDragMove.current)sumGlobalDragMove.current(e.clientX,e.clientY);};var hu=function(){if(sumGlobalDragEnd.current)sumGlobalDragEnd.current();};window.addEventListener("pointermove",hm,{passive:false});window.addEventListener("pointerup",hu);window.addEventListener("pointercancel",hu);return function(){window.removeEventListener("pointermove",hm);window.removeEventListener("pointerup",hu);window.removeEventListener("pointercancel",hu);};});const toggleCollapse=function(key){return setCollapsed(function(p){return{...p,[key]:!p[key]};});};// Auto-lock after 60s of inactivity when unlocked
 const resetLockTimer=function(){clearTimeout(lockTimerRef.current);lockTimerRef.current=setTimeout(function(){setCollapsed(function(c){return Object.assign({},c,{__layoutEdit:false});});return setSummaryLocked(true);},60000);};const toggleLock=function(){setSummaryLocked(function(p){if(p){resetLockTimer();return false;}clearTimeout(lockTimerRef.current);setCollapsed(function(c){return Object.assign({},c,{__layoutEdit:false});});return true;});};// Field-level scroll-to navigation
 const fieldRefs=useRef({});const regRef=function(id){return function(el){if(el)fieldRefs.current[id]=el;};};const goField=function(targetTab,fieldId,subTab,subSetter){return function(){setTab(targetTab);if(subTab&&subSetter)subSetter(subTab);setTimeout(function(){const el=fieldRefs.current[fieldId];if(el){el.scrollIntoView({behavior:"smooth",block:"center"});el.style.outline="2px solid #BA7517";el.style.outlineOffset="2px";setTimeout(function(){el.style.outline="none";},1500);}},100);};};// Dispatch state
 const _useState22=useState({dept:"",dest:"",deptUtcOffset:"",destUtcOffset:"",flightNo:"",acReg:"",ofpNum:"",ofpReclr:"0",ofpEdto:"0",b77:"W",mel:"",fltTime:"",fltLvls:"",fdp:"",stn:"Dubai",lrv:"Non-LRV",deptLt:"",deptUtc:"",destLt:"",destUtc:"",opCapt:"",augCapt:"",augFo:"",purs:"",csvCapt:"",csvFo:"",crew:"",pax:"",minusPax:"",prepA:false,prepB:false,prepC:false,prepD:false,prepE:false}),_useState23=_slicedToArray(_useState22,2),d=_useState23[0],setD=_useState23[1];const _useState24=useState({stand:"",rwy:"",adElev:"",ta:"",trl:"",v2:"",v2plus15:"",vref30:"",vfup:"",vy:"",engFail:""}),_useState25=_slicedToArray(_useState24,2),ad=_useState25[0],setAd=_useState25[1];const _useState26=useState({rwy:"",adElev:"",ta:"",trl:"",vref30:"",vref20plus5:""}),_useState27=_slicedToArray(_useState26,2),aa=_useState27[0],setAa=_useState27[1];const _useState28=useState({info:[""],threats:[""],atis:""}),_useState29=_slicedToArray(_useState28,2),cd=_useState29[0],setCd=_useState29[1];const _useState30=useState({info:[""],threats:[""],reti:"NO",pkg:"",altn:"",atis:""}),_useState31=_slicedToArray(_useState30,2),ca=_useState31[0],setCa=_useState31[1];// Fuel — 3 alternate blocks + configurable burn rate
@@ -1176,57 +1176,49 @@ const addDgrItem=function(){return setDgrItems(function(p){return[...p,emptyDgrI
 const go=function(t){return function(){return setTab(t);};};// Swap all DEP ↔ DEST data (full turnaround swap)
 const swapDepDest=function(){// Capture current values before any state update
 const snapAd={...ad},snapAa={...aa};const snapCd={...cd},snapCa={...ca};setD(function(p){return{...p,dept:p.dest,dest:p.dept,deptUtcOffset:p.destUtcOffset,destUtcOffset:p.deptUtcOffset,deptLt:p.destLt,destLt:p.deptLt,deptUtc:p.destUtc,destUtc:p.deptUtc};});// Swap airport info but clear all speeds — performance-specific, not airport-specific
-setAd({...snapAa,v2:"",v2plus15:"",vref30:"",vfup:"",vy:"",engFail:""});setAa({...snapAd,vref30:"",vref20plus5:""});setCd(snapCa);setCa(snapCd);setCollapsed(function(p){return{...p,__phase:"DEP"};});};return/*#__PURE__*/React.createElement("div",{style:{fontFamily:"var(--font-sans)",background:"var(--color-background-tertiary)",height:"100%",display:"flex",flexDirection:"column"}},/*#__PURE__*/React.createElement("div",{style:{background:"var(--color-background-primary)",borderBottom:"0.5px solid var(--color-border-tertiary)",padding:"10px 16px",display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:8}},/*#__PURE__*/React.createElement("div",{style:{display:"flex",alignItems:"baseline",gap:10}},/*#__PURE__*/React.createElement("span",{style:{fontSize:18,fontWeight:500,color:"#BA7517",fontFamily:"var(--font-mono)",letterSpacing:"0.05em"}},"EK ",d.flightNo||"——"),/*#__PURE__*/React.createElement("span",{style:{fontSize:13,color:"var(--color-text-secondary)",fontFamily:"var(--font-mono)"}},"B77",d.b77," \xB7 A6-",d.acReg||"———")),/*#__PURE__*/React.createElement("div",{style:{display:"flex",gap:14,alignItems:"center",flexWrap:"wrap"}},d.deptLt&&/*#__PURE__*/React.createElement("span",{style:{fontSize:12,color:"var(--color-text-secondary)"}},"Dep ",/*#__PURE__*/React.createElement("span",{style:{color:"var(--color-text-primary)",fontFamily:"var(--font-mono)"}},d.deptLt)),d.destLt&&/*#__PURE__*/React.createElement("span",{style:{fontSize:12,color:"var(--color-text-secondary)"}},"Arr ",/*#__PURE__*/React.createElement("span",{style:{color:"var(--color-text-primary)",fontFamily:"var(--font-mono)"}},d.destLt)),d.fdp&&/*#__PURE__*/React.createElement("span",{style:{fontSize:12,color:"var(--color-text-secondary)"}},"FDP ",/*#__PURE__*/React.createElement("span",{style:{color:"#BA7517",fontFamily:"var(--font-mono)",fontWeight:500}},d.fdp)),d.stn&&/*#__PURE__*/React.createElement("span",{style:{fontSize:11,padding:"2px 8px",background:"var(--color-background-secondary)",borderRadius:10,color:"var(--color-text-secondary)"}},d.stn," \xB7 ",d.lrv))),/*#__PURE__*/// State lives in FlightBrief via tabOrder / tabNames / tabEditMode
-// (injected as new useState calls at the top of FlightBrief).
-// This block replaces the old static TABS.map(...) tab bar.
-(function(){
+setAd({...snapAa,v2:"",v2plus15:"",vref30:"",vfup:"",vy:"",engFail:""});setAa({...snapAd,vref30:"",vref20plus5:""});setCd(snapCa);setCa(snapCd);setCollapsed(function(p){return{...p,__phase:"DEP"};});};return/*#__PURE__*/React.createElement("div",{style:{fontFamily:"var(--font-sans)",background:"var(--color-background-tertiary)",height:"100%",display:"flex",flexDirection:"column"}},/*#__PURE__*/React.createElement("div",{style:{background:"var(--color-background-primary)",borderBottom:"0.5px solid var(--color-border-tertiary)",padding:"10px 16px",display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:8}},/*#__PURE__*/React.createElement("div",{style:{display:"flex",alignItems:"baseline",gap:10}},/*#__PURE__*/React.createElement("span",{style:{fontSize:18,fontWeight:500,color:"#BA7517",fontFamily:"var(--font-mono)",letterSpacing:"0.05em"}},"EK ",d.flightNo||"——"),/*#__PURE__*/React.createElement("span",{style:{fontSize:13,color:"var(--color-text-secondary)",fontFamily:"var(--font-mono)"}},"B77",d.b77," \xB7 A6-",d.acReg||"———")),/*#__PURE__*/React.createElement("div",{style:{display:"flex",gap:14,alignItems:"center",flexWrap:"wrap"}},d.deptLt&&/*#__PURE__*/React.createElement("span",{style:{fontSize:12,color:"var(--color-text-secondary)"}},"Dep ",/*#__PURE__*/React.createElement("span",{style:{color:"var(--color-text-primary)",fontFamily:"var(--font-mono)"}},d.deptLt)),d.destLt&&/*#__PURE__*/React.createElement("span",{style:{fontSize:12,color:"var(--color-text-secondary)"}},"Arr ",/*#__PURE__*/React.createElement("span",{style:{color:"var(--color-text-primary)",fontFamily:"var(--font-mono)"}},d.destLt)),d.fdp&&/*#__PURE__*/React.createElement("span",{style:{fontSize:12,color:"var(--color-text-secondary)"}},"FDP ",/*#__PURE__*/React.createElement("span",{style:{color:"#BA7517",fontFamily:"var(--font-mono)",fontWeight:500}},d.fdp)),d.stn&&/*#__PURE__*/React.createElement("span",{style:{fontSize:11,padding:"2px 8px",background:"var(--color-background-secondary)",borderRadius:10,color:"var(--color-text-secondary)"}},d.stn," \xB7 ",d.lrv))),/*#__PURE__*/(function () {
   var DEFAULT_TAB_ORDER = ["DISPATCH","CCI","FUEL","PERF REF","CHECKS","DGR"];
   var orderedTabs = tabOrder.length ? tabOrder : DEFAULT_TAB_ORDER;
-  var HOLD_MS = 140;
 
-  // ── long-press on the bar background to enter edit mode ──
-    
-  var handleBarPointerDown = function(e) {
-    // Only fire if tap is on the bar background itself (not on a child button)
-    if (e.target !== e.currentTarget) return;
-    barPointerStart.current = { x: e.clientX, y: e.clientY };
-    clearTimeout(barHoldTimer.current);
-    barHoldTimer.current = setTimeout(function() {
-      setTabEditMode(true);
-    }, HOLD_MS);
+  // ── inline rename state (transient, not persisted) ──
+  var renamingTab = tabRenameTarget;      // null or tabId
+  var renameValue = tabRenameValue;       // current input string
+  var setRenamingTab = setTabRenameTarget;
+  var setRenameValue = setTabRenameValue;
+
+  var startRename = function (tabId) {
+    setRenamingTab(tabId);
+    setRenameValue(tabNames[tabId] || tabId);
   };
-  var handleBarPointerMove = function(e) {
-    if (!barPointerStart.current) return;
-    var dx = e.clientX - barPointerStart.current.x;
-    var dy = e.clientY - barPointerStart.current.y;
-    if (dx*dx + dy*dy > 36) {
-      clearTimeout(barHoldTimer.current);
-      barPointerStart.current = null;
+
+  var commitRename = function () {
+    if (renamingTab && renameValue.trim()) {
+      var updated = Object.assign({}, tabNames);
+      updated[renamingTab] = renameValue.trim().toUpperCase();
+      setTabNames(updated);
     }
-  };
-  var handleBarPointerUp = function() {
-    clearTimeout(barHoldTimer.current);
-    barPointerStart.current = null;
+    setRenamingTab(null);
+    setRenameValue('');
   };
 
-  // ── per-tab drag state (stored in a ref — no re-render during drag) ──
-    
-  var startTabDrag = function(tabId, x) {
-    tabDragState.current = { tabId: tabId, startX: x, currentX: x, order: orderedTabs.slice() };
+  var cancelRename = function () {
+    setRenamingTab(null);
+    setRenameValue('');
   };
 
-  var moveTabDrag = function(x) {
+  // ── tab drag ──
+  var startTabDrag = function (tabId, startX) {
+    tabDragState.current = { tabId: tabId, startX: startX, order: orderedTabs.slice() };
+  };
+
+  var moveTabDrag = function (x) {
     if (!tabDragState.current) return;
-    tabDragState.current.currentX = x;
-    // Compute new order by finding tab whose center is nearest x
-    // We read button rects from the DOM
-    var order = tabDragState.current.order.slice();
     var dragged = tabDragState.current.tabId;
     var barEl = document.querySelector('[data-tabbar]');
     if (!barEl) return;
     var buttons = Array.from(barEl.querySelectorAll('[data-tabid]'));
     var best = -1, bestDist = Infinity;
-    buttons.forEach(function(btn, i) {
+    buttons.forEach(function (btn, i) {
       if (btn.dataset.tabid === dragged) return;
       var r = btn.getBoundingClientRect();
       var cx = r.left + r.width / 2;
@@ -1234,51 +1226,21 @@ setAd({...snapAa,v2:"",v2plus15:"",vref30:"",vfup:"",vy:"",engFail:""});setAa({.
       if (dist < bestDist) { bestDist = dist; best = i; }
     });
     if (best >= 0) {
-      var newOrder = order.filter(function(t) { return t !== dragged; });
-      // find position of best button in newOrder
-      var targetTab = buttons[best].dataset.tabid;
-      var targetIdx = newOrder.indexOf(targetTab);
-      // insert before or after based on x vs center
-      var btnR = buttons[best].getBoundingClientRect();
-      var cx = btnR.left + btnR.width / 2;
-      var insertIdx = x < cx ? targetIdx : targetIdx + 1;
-      newOrder.splice(insertIdx, 0, dragged);
-      tabDragState.current.order = newOrder;
-      setTabOrder(newOrder);
+      var order = orderedTabs.filter(function (t) { return t !== dragged; });
+      var targetId = buttons[best].dataset.tabid;
+      var tIdx = order.indexOf(targetId);
+      var r2 = buttons[best].getBoundingClientRect();
+      var insertIdx = x < r2.left + r2.width / 2 ? tIdx : tIdx + 1;
+      order.splice(insertIdx, 0, dragged);
+      tabDragState.current.order = order;
+      setTabOrder(order);
     }
   };
 
-  var endTabDrag = function() {
-    if (tabDragState.current) {
-      setTabOrder(tabDragState.current.order);
-    }
+  var endTabDrag = function () {
+    if (tabDragState.current) setTabOrder(tabDragState.current.order);
     tabDragState.current = null;
-    if (tabDragAnimFrame.current) cancelAnimationFrame(tabDragAnimFrame.current);
-  };
-
-  // ── double-tap detection per tab ──
-    var handleTabTap = function(tabId) {
-    if (!tabEditMode) {
-      setTab(tabId);
-      return;
-    }
-    var now = Date.now();
-    var last = lastTapTime.current[tabId] || 0;
-    if (now - last < 350) {
-      // Double-tap — prompt for rename
-      var current = tabNames[tabId] || tabId;
-      var newName = window.prompt('Rename "' + current + '":', current);
-      if (newName !== null && newName.trim()) {
-        var updated = Object.assign({}, tabNames);
-        updated[tabId] = newName.trim().toUpperCase();
-        setTabNames(updated);
-      }
-      lastTapTime.current[tabId] = 0;
-    } else {
-      lastTapTime.current[tabId] = now;
-      // Single tap in edit mode — still navigate
-      setTab(tabId);
-    }
+    if (tabDragAnimFrame.current) { cancelAnimationFrame(tabDragAnimFrame.current); tabDragAnimFrame.current = null; }
   };
 
   // ── render ──
@@ -1293,43 +1255,35 @@ setAd({...snapAa,v2:"",v2plus15:"",vref30:"",vfup:"",vy:"",engFail:""});setAa({.
         display: 'flex',
         overflowX: 'auto',
         flexShrink: 0,
-        position: 'relative',
         userSelect: 'none',
         WebkitUserSelect: 'none',
       },
-      onPointerDown: handleBarPointerDown,
-      onPointerMove: handleBarPointerMove,
-      onPointerUp: handleBarPointerUp,
-      onPointerCancel: handleBarPointerUp,
     },
 
     // ── tab buttons ──
-    orderedTabs.map(function(t) {
+    orderedTabs.map(function (t) {
       var displayName = tabNames[t] || t;
       var isActive = tab === t;
-      var isDragging = tabDragState.current && tabDragState.current.tabId === t;
+      var isRenaming = renamingTab === t;
 
-      var handleTabPointerDown = function(e) {
-        e.stopPropagation();
+      var handlePointerDown = function (e) {
         if (!tabEditMode) return;
-        var tabId = t;
+        e.stopPropagation();
         var startX = e.clientX;
-        var holdTimer = setTimeout(function() {
+        var tabId = t;
+        var holdTimer = setTimeout(function () {
           startTabDrag(tabId, startX);
-        }, HOLD_MS);
-        var onMove = function(me) {
-          var dx = me.clientX - startX;
-          if (Math.abs(dx) > 6 && tabDragState.current) {
+        }, 130);
+        var onMove = function (me) {
+          if (tabDragState.current) {
             if (tabDragAnimFrame.current) cancelAnimationFrame(tabDragAnimFrame.current);
             var mx = me.clientX;
-            tabDragAnimFrame.current = requestAnimationFrame(function() {
-              moveTabDrag(mx);
-            });
-          } else if (Math.abs(dx) > 20 && !tabDragState.current) {
+            tabDragAnimFrame.current = requestAnimationFrame(function () { moveTabDrag(mx); });
+          } else if (Math.abs(me.clientX - startX) > 8) {
             clearTimeout(holdTimer);
           }
         };
-        var onUp = function() {
+        var onUp = function () {
           clearTimeout(holdTimer);
           endTabDrag();
           window.removeEventListener('pointermove', onMove);
@@ -1341,17 +1295,65 @@ setAd({...snapAa,v2:"",v2plus15:"",vref30:"",vfup:"",vy:"",engFail:""});setAa({.
         window.addEventListener('pointercancel', onUp);
       };
 
+      var handleClick = function (e) {
+        e.stopPropagation();
+        if (tabEditMode) {
+          if (isRenaming) { commitRename(); return; }
+          startRename(t);
+        } else {
+          setTab(t);
+        }
+      };
+
+      // In edit mode + this tab selected for rename: show inline input
+      if (tabEditMode && isRenaming) {
+        return React.createElement('div', {
+          key: t,
+          'data-tabid': t,
+          style: {
+            display: 'flex',
+            alignItems: 'center',
+            padding: '6px 8px',
+            borderBottom: '2px solid #9B7FB8',
+            background: '#9B7FB820',
+            flexShrink: 0,
+          }
+        },
+          React.createElement('input', {
+            autoFocus: true,
+            value: renameValue,
+            onChange: function (e) { setRenameValue(e.target.value); },
+            onKeyDown: function (e) {
+              if (e.key === 'Enter') commitRename();
+              if (e.key === 'Escape') cancelRename();
+            },
+            onBlur: commitRename,
+            style: {
+              background: 'transparent',
+              border: 'none',
+              outline: 'none',
+              color: '#9B7FB8',
+              fontSize: 12,
+              fontWeight: 700,
+              letterSpacing: '0.05em',
+              width: Math.max(60, renameValue.length * 9) + 'px',
+              padding: 0,
+            }
+          })
+        );
+      }
+
       return React.createElement('button', {
         key: t,
         'data-tabid': t,
-        onClick: function() { handleTabTap(t); },
-        onPointerDown: handleTabPointerDown,
+        onClick: handleClick,
+        onPointerDown: handlePointerDown,
         style: {
           padding: '11px 16px',
           background: 'transparent',
           border: 'none',
           borderBottom: '2px solid ' + (isActive ? '#BA7517' : 'transparent'),
-          color: isActive ? '#BA7517' : 'var(--color-text-secondary)',
+          color: tabEditMode ? '#9B7FB8' : (isActive ? '#BA7517' : 'var(--color-text-secondary)'),
           cursor: tabEditMode ? 'grab' : 'pointer',
           fontSize: 12,
           fontWeight: isActive ? 500 : 400,
@@ -1360,10 +1362,9 @@ setAd({...snapAa,v2:"",v2plus15:"",vref30:"",vfup:"",vy:"",engFail:""});setAa({.
           display: 'flex',
           alignItems: 'center',
           gap: 5,
-          opacity: isDragging ? 0.4 : 1,
-          animation: tabEditMode && !isDragging ? 'ekTabWiggle 0.22s ease-in-out infinite alternate' : 'none',
-          transition: 'opacity 0.1s',
-          touchAction: 'none',
+          animation: tabEditMode ? 'ekTabWiggle 0.22s ease-in-out infinite alternate' : 'none',
+          touchAction: tabEditMode ? 'none' : 'auto',
+          flexShrink: 0,
         },
       },
         displayName,
@@ -1373,27 +1374,49 @@ setAd({...snapAa,v2:"",v2plus15:"",vref30:"",vfup:"",vy:"",engFail:""});setAa({.
       );
     }),
 
-    // ── edit mode controls: Done + Reset ──
+    // ── edit mode: DONE + RESET ──
     tabEditMode && React.createElement('div', {
-      style: { marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 0, flexShrink: 0, borderLeft: '0.5px solid var(--color-border-tertiary)' }
+      style: { display: 'flex', alignItems: 'center', flexShrink: 0, borderLeft: '0.5px solid var(--color-border-tertiary)' }
     },
       React.createElement('button', {
-        onClick: function(e) {
+        onClick: function (e) {
           e.stopPropagation();
           setTabOrder(DEFAULT_TAB_ORDER.slice());
           setTabNames({});
+          setRenamingTab(null);
         },
-        style: { padding: '11px 10px', background: 'transparent', border: 'none', color: '#C45A4A', cursor: 'pointer', fontSize: 10, fontWeight: 600, whiteSpace: 'nowrap', letterSpacing: '0.06em' }
+        style: { padding: '11px 10px', background: 'transparent', border: 'none', color: '#C45A4A', cursor: 'pointer', fontSize: 10, fontWeight: 600, letterSpacing: '0.06em', flexShrink: 0 }
       }, 'RESET'),
       React.createElement('button', {
-        onClick: function(e) { e.stopPropagation(); setTabEditMode(false); },
-        style: { padding: '11px 12px', background: 'transparent', border: 'none', color: '#9B7FB8', cursor: 'pointer', fontSize: 10, fontWeight: 700, whiteSpace: 'nowrap', letterSpacing: '0.06em' }
+        onClick: function (e) {
+          e.stopPropagation();
+          commitRename();
+          setTabEditMode(false);
+        },
+        style: { padding: '11px 12px', background: 'transparent', border: 'none', color: '#9B7FB8', cursor: 'pointer', fontSize: 10, fontWeight: 700, letterSpacing: '0.06em', flexShrink: 0 }
       }, 'DONE')
     ),
 
-    // ── normal SUMMARY shortcut (hidden in edit mode) ──
+    // ── ✏ edit button (always visible when not in edit mode) ──
+    !tabEditMode && React.createElement('button', {
+      onClick: function (e) { e.stopPropagation(); setTabEditMode(true); },
+      title: 'Edit tabs',
+      style: {
+        padding: '11px 12px',
+        background: 'transparent',
+        border: 'none',
+        borderLeft: '0.5px solid var(--color-border-tertiary)',
+        color: 'var(--color-text-secondary)',
+        cursor: 'pointer',
+        fontSize: 14,
+        flexShrink: 0,
+        opacity: 0.5,
+      }
+    }, '\u270F\uFE0F'),
+
+    // ── SUMMARY shortcut ──
     !tabEditMode && tab !== 'SUMMARY' && React.createElement('button', {
-      onClick: function() { setTab('SUMMARY'); },
+      onClick: function () { setTab('SUMMARY'); },
       style: { marginLeft: 'auto', padding: '11px 14px', background: 'transparent', border: 'none', borderBottom: '2px solid transparent', borderLeft: '0.5px solid var(--color-border-tertiary)', color: '#BA7517', cursor: 'pointer', fontSize: 11, fontWeight: 500, whiteSpace: 'nowrap', letterSpacing: '0.05em', flexShrink: 0 }
     }, '\u2B1B SUMMARY')
   );
