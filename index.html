@@ -501,7 +501,8 @@ function JiggleTile(_ref2) {
   };
   var handlePointerDown = function (e) {
     if (!editing) return;
-    e.stopPropagation();
+    // Don't stopPropagation yet — let the chip's own focus/click handlers
+    // work normally on a quick tap. We only suppress them if hold fires.
     var x0 = e.clientX,
       y0 = e.clientY;
     startPos.current = {
@@ -511,6 +512,12 @@ function JiggleTile(_ref2) {
     holding.current = false;
     holdTimer.current = setTimeout(function () {
       holding.current = true;
+      // Now capture the pointer so moves/ups come to us even off-element
+      if (ref.current && ref.current.setPointerCapture) {
+        try {
+          ref.current.setPointerCapture(e.pointerId);
+        } catch (_) {}
+      }
       var rect = ref.current ? ref.current.getBoundingClientRect() : {
         width: 80
       };
@@ -520,33 +527,43 @@ function JiggleTile(_ref2) {
   var handlePointerMove = function (e) {
     if (!editing) return;
     if (!holding.current) {
-      // Cancel hold if finger moved more than 8px before threshold
+      // Cancel hold if finger moved more than 6px before threshold
       if (startPos.current) {
         var dx = e.clientX - startPos.current.x;
         var dy = e.clientY - startPos.current.y;
-        if (dx * dx + dy * dy > 64) cancel();
+        if (dx * dx + dy * dy > 36) cancel();
       }
       return;
     }
     e.preventDefault();
+    e.stopPropagation();
     onDragMove(e.clientX, e.clientY);
   };
   var handlePointerUp = function (e) {
+    var wasHolding = holding.current;
     clearTimeout(holdTimer.current);
-    if (holding.current) {
-      holding.current = false;
+    holding.current = false;
+    startPos.current = null;
+    if (wasHolding) {
+      e.preventDefault();
+      e.stopPropagation();
       onDragEnd();
     }
-    startPos.current = null;
+    // If not holding, this was a tap — let normal click/focus through
   };
   var wrapperStyle = {
+    display: "inline-flex",
+    alignItems: "flex-start",
+    flexShrink: 0,
     touchAction: editing ? "none" : "auto",
     opacity: isDragging ? 0 : 1,
     outline: editing && !isDragging ? "1.5px solid " + (isTarget ? "#C0A0E0" : "#9B7FB855") : "none",
     outlineOffset: "2px",
     borderRadius: 10,
     cursor: editing ? isDragging ? "grabbing" : "grab" : undefined,
-    transition: isDragging ? "none" : "opacity 0.1s"
+    transition: isDragging ? "none" : "opacity 0.1s",
+    userSelect: "none",
+    WebkitUserSelect: "none"
   };
   return React.createElement("div", {
     ref: ref,
@@ -576,6 +593,8 @@ function DropZone(_ref3) {
     style: {
       display: "flex",
       flexWrap: "wrap",
+      alignItems: "flex-start",
+      alignContent: "flex-start",
       gap: 8,
       marginBottom: 12,
       minHeight: editing ? 44 : undefined,
