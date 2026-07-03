@@ -1171,7 +1171,7 @@ function parseLidoOFP(text) {
   var m;
 
   // Header: EK9920 02JUL    SEQM/UIO-TJBQ/BQN      B777F A6-EFV
-  m = text.match(/^(EK\d+)\s+(\d{2}[A-Z]{3})\s+\w+\/(\w+)-\w+\/(\w+)\s+(B777\w*)\s+A6-([A-Z0-9]+)/m);
+  m = text.match(/(EK\d+)\s+(\d{2}[A-Z]{3})\s+\w+\/(\w+)-\w+\/(\w+)\s+(B777\w*)\s+A6-([A-Z0-9]+)/);
   if (m) {
     result.flightNo = m[1].replace('EK','');
     result.date     = m[2];
@@ -1227,8 +1227,7 @@ function parseLidoOFP(text) {
 
   // All alternate airports (full table: MDPC, MDSD, TFFR...)
   var altns = [];
-  var altnRe = /^([A-Z]{4})\/\d{2}\s+\d+\s+\d+\s+\d+\s+[PM]\d+\s+(\d{4})\s+(\d+)/mg;
-  var am;
+  var altnRe = /([A-Z]{4})\/\d+\s+\d+\s+\d+\s+\d+\s+[PM]\d+\s+(\d{4})\s+(\d+)/g; var am;
   while ((am = altnRe.exec(text)) !== null && altns.length < 3) {
     altns.push({ airfield: am[1], altnFuel: am[3] });
   }
