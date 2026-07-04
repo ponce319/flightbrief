@@ -1198,7 +1198,7 @@ function parseLidoOFP(text) {
   if (m) result.fltTime = m[1] + ':' + m[2];
 
   // Block time (RAMP FUEL ... TIME)
-  m = text.match(/\bRAMP FUEL\s+[\d.]+\s+(\d{2})(\d{2})\b/);
+  m = text.match(/\bRAMP FUEL\s+[\d.]+\s+(\d{2})(\d{2})/);
   if (m) result.fdp = m[1] + ':' + m[2];
 
   // Cruise FL
@@ -1216,7 +1216,7 @@ function parseLidoOFP(text) {
     if (m) result.depRwy = m[1];
     // SID: first token after ICAO/RWY
     m = text.match(new RegExp(result.deptIcao + '\/\\d{1,2}[LRC]?\\s+(\\S+)'));
-    if (m) result.sid = m[1];
+    if (m && m[1] !== "DCT") result.sid = m[1];
   }
   if (result.destIcao) {
     m = text.match(new RegExp(result.destIcao + '\/(\\d{1,2}[LRC]?)\\b'));
@@ -1241,7 +1241,7 @@ function parseLidoOFP(text) {
 
   // All alternate airports (full table: MDPC, MDSD, TFFR...)
   var altns = [];
-  var altnRe = /([A-Z]{4})\/\d+\s+\d+\s+\d+\s+\d+\s+[PM]\d+\s+(\d{4})\s+(\d+)/g; var am;
+  var altnRe = /([A-Z]{4})\/\d+[A-Z]?\s+\d+\s+\d+\s+\d+\s+[PM]\d+\s+(\d{4})\s+(\d+)/g; var am;
   while ((am = altnRe.exec(text)) !== null && altns.length < 3) {
     altns.push({ airfield: am[1], altnFuel: am[3] });
   }
