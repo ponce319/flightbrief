@@ -580,7 +580,6 @@ function DropZone(_ref3) {
     editing = _ref3.editing,
     isTarget = _ref3.isTarget,
     children = _ref3.children,
-    cols = _ref3.cols,
     registerRect = _ref3.registerRect;
   var ref = useRef(null);
   useEffect(function () {
@@ -595,9 +594,8 @@ function DropZone(_ref3) {
       flexWrap: "wrap",
       alignItems: "flex-start",
       alignContent: "flex-start",
-      gap: 6,
+      gap: 8,
       marginBottom: 12,
-      "--section-cols": cols || 4,
       minHeight: editing ? 44 : undefined,
       borderRadius: 10,
       border: editing ? "1.5px dashed " + (isTarget ? "#9B7FB8" : "rgba(155,127,184,0.25)") : "1.5px dashed transparent",
@@ -611,13 +609,11 @@ function DropZone(_ref3) {
 var DEFAULT_LAYOUT_DEP = {
   dep: ["stand", "depElev", "depTa", "depTrl"],
   crew: ["pax", "minusPax", "sob", "opCapt", "purser"],
-  perf: ["depRwy", "mac", "rtow", "qnh", "oat", "pa", "da", "vref30dep", "v2", "v2plus15", "vfup", "engFail", "vy"],
-  depCols: 4, crewCols: 4, perfCols: 4
+  perf: ["depRwy", "mac", "rtow", "qnh", "oat", "pa", "da", "vref30dep", "v2", "v2plus15", "vfup", "engFail", "vy"]
 };
 var DEFAULT_LAYOUT_ARR = {
   arr: ["reti", "pkg"],
-  app: ["arrRwy", "arrElev", "arrTa", "arrTrl", "arrVref30", "arrVref20p5"],
-  arrCols: 4, appCols: 4
+  app: ["arrRwy", "arrElev", "arrTa", "arrTrl", "arrVref30", "arrVref20p5"]
 };
 
 // Merge saved layout with defaults: keep saved order, add any new chips, drop obsolete IDs.
@@ -644,10 +640,6 @@ function reconcileLayout(saved, defaults) {
       if (!placed[id]) { result[sec].push(id); placed[id] = true; }
     });
   });
-  // Preserve cols settings from saved layout
-  Object.keys(defaults).forEach(function(k) {
-    if (k.endsWith("Cols")) result[k] = saved && saved[k] != null ? saved[k] : defaults[k];
-  });
   return result;
 }
 
@@ -655,6 +647,7 @@ function reconcileLayout(saved, defaults) {
 function moveChip(layout, chipId, toSection, toIndex) {
   var next = {};
   Object.keys(layout).forEach(function (sec) {
+    if (!Array.isArray(layout[sec])) { next[sec] = layout[sec]; return; }
     next[sec] = layout[sec].filter(function (id) {
       return id !== chipId;
     });
@@ -995,48 +988,22 @@ function SumChipSection(_ref) {
     editing = _ref.editing,
     drag = _ref.drag,
     registerRect = _ref.registerRect,
-    cols = _ref.cols,
-    onColsChange = _ref.onColsChange,
     extra = _ref.extra;
-  return React.createElement(React.Fragment, null,
-  React.createElement('div', {style:{display:'flex',alignItems:'center',justifyContent:'space-between'}},
-    React.createElement(SumSection, {
-      label: label,
-      color: color,
-      onClick: onHeaderClick
-    }),
-    editing && onColsChange && React.createElement('div', {style:{display:'flex',gap:3,paddingRight:4}},
-      [1,2,3,4].map(function(n){
-        return React.createElement('button',{
-          key:n,
-          onClick:function(e){e.stopPropagation();onColsChange(n);},
-          style:{
-            padding:'3px 7px',fontSize:10,fontWeight:700,
-            background:cols===n?color:'transparent',
-            color:cols===n?'#000':color,
-            border:'1px solid '+color+'88',
-            borderRadius:5,cursor:'pointer',opacity:0.85
-          }
-        },n);
-      })
-    )
-  ),
-  React.createElement(DropZone, {
+  return React.createElement(React.Fragment, null, React.createElement(SumSection, {
+    label: label,
+    color: color,
+    onClick: onHeaderClick
+  }), React.createElement(DropZone, {
     sectionId: sectionId,
-    cols: cols,
     editing: editing,
     isTarget: drag.active && drag.targetSection === sectionId,
     registerRect: registerRect
-  }, chipIds.reduce(function(acc, chipId, chipIdx) {
+  }, chipIds.map(function (chipId, idx) {
     var renderChip = registry[chipId];
-    if (!renderChip) return acc;
-    // Insert flex-break before every Nth chip (when not editing) to force row wrap
-    if (!editing && cols && cols < 4 && chipIdx > 0 && chipIdx % cols === 0) {
-      acc.push(React.createElement("div",{key:"brk-"+chipIdx,style:{flexBasis:"100%",height:0}}));
-    }
+    if (!renderChip) return null;
     var isDragging = drag.active && drag.chipId === chipId;
-    var isTarget = drag.active && drag.overSection === sectionId && drag.overIndex === chipIdx;
-    acc.push(React.createElement(JiggleTile, {
+    var isTarget = drag.active && drag.overSection === sectionId && drag.overIndex === idx;
+    return React.createElement(JiggleTile, {
       key: chipId,
       id: chipId,
       sectionId: sectionId,
@@ -1047,9 +1014,8 @@ function SumChipSection(_ref) {
       onDragMove: drag.onDragMove,
       onDragEnd: drag.onDragEnd,
       registerChipRect: drag.registerChipRect
-    }, renderChip()));
-    return acc;
-  }, []), extra || null));
+    }, renderChip());
+  }), extra || null));
 }
 
 // ── useDragLayout ────────────────────────────────────────────
@@ -1701,8 +1667,6 @@ setAd({...snapAa,v2:"",v2plus15:"",vref30:"",vfup:"",vy:"",engFail:""});setAa({.
     color: S.amber,
     onHeaderClick: go('PERF REF'),
     chipIds: dragDep.effectiveLayout.dep,
-    cols: layoutDep.depCols || 4,
-    onColsChange: function(n){setTileLayoutDep(function(p){return Object.assign({},p,{depCols:n});});},
     registry: registry,
     editing: sumLayoutEdit,
     drag: dragDep.drag,
@@ -1713,8 +1677,6 @@ setAd({...snapAa,v2:"",v2plus15:"",vref30:"",vfup:"",vy:"",engFail:""});setAa({.
     color: S.muted,
     onHeaderClick: go('DISPATCH'),
     chipIds: dragDep.effectiveLayout.crew,
-    cols: layoutDep.crewCols || 4,
-    onColsChange: function(n){setTileLayoutDep(function(p){return Object.assign({},p,{crewCols:n});});},
     registry: registry,
     editing: sumLayoutEdit,
     drag: dragDep.drag,
@@ -1730,8 +1692,6 @@ setAd({...snapAa,v2:"",v2plus15:"",vref30:"",vfup:"",vy:"",engFail:""});setAa({.
     color: '#9B7FB8',
     onHeaderClick: go('PERF REF'),
     chipIds: dragDep.effectiveLayout.perf,
-    cols: layoutDep.perfCols || 4,
-    onColsChange: function(n){setTileLayoutDep(function(p){return Object.assign({},p,{perfCols:n});});},
     registry: registry,
     editing: sumLayoutEdit,
     drag: dragDep.drag,
@@ -1888,8 +1848,6 @@ setAd({...snapAa,v2:"",v2plus15:"",vref30:"",vfup:"",vy:"",engFail:""});setAa({.
     color: S.blue,
     onHeaderClick: go('CCI'),
     chipIds: dragArr.effectiveLayout.arr,
-    cols: layoutArr.arrCols || 4,
-    onColsChange: function(n){setTileLayoutArr(function(p){return Object.assign({},p,{arrCols:n});});},
     registry: registry,
     editing: sumLayoutEdit,
     drag: dragArr.drag,
@@ -1950,8 +1908,6 @@ setAd({...snapAa,v2:"",v2plus15:"",vref30:"",vfup:"",vy:"",engFail:""});setAa({.
     color: S.blue,
     onHeaderClick: go('PERF REF'),
     chipIds: dragArr.effectiveLayout.app,
-    cols: layoutArr.appCols || 4,
-    onColsChange: function(n){setTileLayoutArr(function(p){return Object.assign({},p,{appCols:n});});},
     registry: registry,
     editing: sumLayoutEdit,
     drag: dragArr.drag,
