@@ -629,6 +629,7 @@ function reconcileLayout(saved, defaults) {
     if (!Array.isArray(defaults[sec])) return;
     var savedSec = saved && saved[sec] || [];
     result[sec] = savedSec.filter(function (id) {
+      if (id === "ROW_BREAK") return true;
       if (!known[id] || placed[id]) return false;
       placed[id] = true;
       return true;
@@ -998,24 +999,57 @@ function SumChipSection(_ref) {
     editing: editing,
     isTarget: drag.active && drag.targetSection === sectionId,
     registerRect: registerRect
-  }, chipIds.map(function (chipId, idx) {
+  }, chipIds.reduce(function(acc, chipId, idx) {
+    if (chipId === "ROW_BREAK") {
+      acc.push(React.createElement("div", { key: "rb-"+idx, style: { flexBasis: "100%", height: 0 } }));
+      return acc;
+    }
     var renderChip = registry[chipId];
-    if (!renderChip) return null;
+    if (!renderChip) return acc;
     var isDragging = drag.active && drag.chipId === chipId;
     var isTarget = drag.active && drag.overSection === sectionId && drag.overIndex === idx;
-    return React.createElement(JiggleTile, {
-      key: chipId,
-      id: chipId,
-      sectionId: sectionId,
-      editing: editing,
-      isDragging: isDragging,
-      isTarget: isTarget,
-      onDragStart: drag.onDragStart,
-      onDragMove: drag.onDragMove,
-      onDragEnd: drag.onDragEnd,
-      registerChipRect: drag.registerChipRect
-    }, renderChip());
-  }), extra || null));
+    acc.push(React.createElement(JiggleTile, {
+      key: chipId, id: chipId, sectionId: sectionId,
+      editing: editing, isDragging: isDragging, isTarget: isTarget,
+      onDragStart: drag.onDragStart, onDragMove: drag.onDragMove,
+      onDragEnd: drag.onDragEnd, registerChipRect: drag.registerChipRect
+    }, renderChip()));
+    // In edit mode: show ↵ button after chip to insert a row break
+    var nextId = chipIds[idx + 1];
+    var hasRealNext = nextId && nextId !== "ROW_BREAK";
+    var nextIsBreak = nextId === "ROW_BREAK";
+    if (editing && !isDragging) {
+      if (hasRealNext) {
+        acc.push(React.createElement("button", {
+          key: "add-br-"+idx,
+          onClick: function() {
+            var n = chipIds.slice(); n.splice(idx+1, 0, "ROW_BREAK");
+            drag.onLayoutChange(sectionId, n);
+          },
+          title: "Add row break",
+          style: { alignSelf:"center", padding:"2px 5px", fontSize:13,
+            background:"transparent", border:"1px dashed #9B7FB866",
+            borderRadius:4, color:"#9B7FB8", cursor:"pointer",
+            opacity:0.7, lineHeight:1, flexShrink:0 }
+        }, "\u21B5"));
+      }
+      if (nextIsBreak) {
+        acc.push(React.createElement("button", {
+          key: "rm-br-"+idx,
+          onClick: function() {
+            var n = chipIds.filter(function(id,i){ return !(i===idx+1 && id==="ROW_BREAK"); });
+            drag.onLayoutChange(sectionId, n);
+          },
+          title: "Remove row break",
+          style: { alignSelf:"center", padding:"2px 5px", fontSize:11,
+            background:"#9B7FB820", border:"1px solid #9B7FB8",
+            borderRadius:4, color:"#9B7FB8", cursor:"pointer",
+            lineHeight:1, flexShrink:0 }
+        }, "\u2715"));
+      }
+    }
+    return acc;
+  }, []), extra || null));
 }
 
 // ── useDragLayout ────────────────────────────────────────────
@@ -1060,9 +1094,10 @@ function useDragLayout(layout, setLayout, registry, drag0, setDrag, sectionRects
       return id !== draggedId;
     });
     if (!arr.length) return 0;
+    var chipsOnly = arr.filter(function(id) { return id !== "ROW_BREAK"; });
     var bestIdx = arr.length;
     var bestDist = Infinity;
-    arr.forEach(function (chipId, idx) {
+    chipsOnly.forEach(function (chipId, idx) {
       var entry = chipRects.current[chipId];
       if (!entry || !entry.rect) return;
       var r = entry.rect;
@@ -1132,17 +1167,26 @@ function useDragLayout(layout, setLayout, registry, drag0, setDrag, sectionRects
       return null;
     });
   };
+  var onLayoutChange = function(sectionId, newChipIds) {
+    setLayout(function(prev) {
+      var next = Object.assign({}, prev);
+      next[sectionId] = newChipIds;
+      return next;
+    });
+  };
   var drag = drag0 ? Object.assign({}, drag0, {
     onDragStart: onDragStart,
     onDragMove: onDragMove,
     onDragEnd: onDragEnd,
-    registerChipRect: registerChipRect
+    registerChipRect: registerChipRect,
+    onLayoutChange: onLayoutChange
   }) : {
     active: false,
     onDragStart: onDragStart,
     onDragMove: onDragMove,
     onDragEnd: onDragEnd,
-    registerChipRect: registerChipRect
+    registerChipRect: registerChipRect,
+    onLayoutChange: onLayoutChange
   };
   var effectiveLayout = drag0 && drag0.previewLayout ? drag0.previewLayout : layout;
   var ghost = null;
