@@ -612,7 +612,7 @@ var DEFAULT_LAYOUT_DEP = {
   perf: ["depRwy", "mac", "rtow", "qnh", "oat", "pa", "da", "vref30dep", "v2", "v2plus15", "vfup", "engFail", "vy"]
 };
 var DEFAULT_LAYOUT_ARR = {
-  arr: ["reti", "pkg"],
+  arr: ["reti", "pkg", "arrQnh", "arrOat", "arrPaChip", "arrDaChip"],
   app: ["arrRwy", "arrElev", "arrTa", "arrTrl", "arrVref30", "arrVref20p5"]
 };
 
@@ -671,7 +671,11 @@ function buildChipRegistry(ctx) {
     perf = ctx.perf;
   const finalPax = ctx.finalPax,
     pa = ctx.pa,
-    da = ctx.da;
+    da = ctx.da,
+    arrPa = ctx.arrPa,
+    arrDa = ctx.arrDa;
+  const setArrQnh = ctx.setArrQnh,
+    setArrOat = ctx.setArrOat;
   const setStand = ctx.setStand,
     setDepElev = ctx.setDepElev,
     setDepTa = ctx.setDepTa,
@@ -974,6 +978,40 @@ function buildChipRegistry(ctx) {
         onChange: e ? setArrVref20p5 : undefined,
         type: "number",
         onActivity: act
+      });
+    },
+    arrQnh: function () {
+      return React.createElement(T2Chip, {
+        label: "QNH",
+        value: perf.arrQnh,
+        editable: e,
+        onChange: e ? setArrQnh : undefined,
+        type: "number",
+        onActivity: act,
+        onClick: !e ? goField("PERF REF", "perf.arrQnh", "Arrival", setPerfSub) : undefined
+      });
+    },
+    arrOat: function () {
+      return React.createElement(T2Chip, {
+        label: "OAT",
+        value: perf.arrOat,
+        editable: e,
+        onChange: e ? setArrOat : undefined,
+        type: "number",
+        onActivity: act,
+        onClick: !e ? goField("PERF REF", "perf.arrOat", "Arrival", setPerfSub) : undefined
+      });
+    },
+    arrPaChip: function () {
+      return React.createElement(T3Chip, {
+        label: "PA (ft)",
+        value: arrPa !== null ? String(arrPa) : ""
+      });
+    },
+    arrDaChip: function () {
+      return React.createElement(T3Chip, {
+        label: "DA (ft)",
+        value: arrDa !== null ? String(arrDa) : ""
       });
     }
   };
