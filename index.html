@@ -1252,9 +1252,9 @@ function parseLidoOFP(text) {
   var m;
 
   // Header: EK9920 02JUL    SEQM/UIO-TJBQ/BQN      B777F A6-EFV
-  m = text.match(/(EK\d+)\s+(\d{2}[A-Z]{3})\s+\w+\/(\w+)-\w+\/(\w+)\s+(B777\w*)\s+A6-([A-Z0-9]+)/);
+  m = text.match(/(EK\s*\d+)\s+(\d{2}[A-Z]{3})\s+\w+\/(\w+)-\w+\/(\w+)\s+(B777\w*)\s+A6-\s*([A-Z0-9]+)/);
   if (m) {
-    result.flightNo = m[1].replace('EK','');
+    result.flightNo = m[1].replace('EK','').replace(/\s/g,'');
     result.date     = m[2];
     result.dept     = m[3];
     result.dest     = m[4];
@@ -1271,16 +1271,15 @@ function parseLidoOFP(text) {
   if (m) result.ofpNum = m[1];
 
   // DEP / ARR UTC times
-  m = text.match(/\bDEP\s+(\d{4})\b/);  if (m) result.deptUtc = m[1];
-  m = text.match(/\bARR\s+(\d{4})\b/);  if (m) result.destUtc = m[1];
+  m = text.match(/\bDEP\s+(\d{2})\s*(\d{2})\b/); if (m) result.deptUtc = m[1]+m[2];
+  m = text.match(/\bARR\s+(\d{2})\s*(\d{2})\b/); if (m) result.destUtc = m[1]+m[2];
 
   // Flight time (ET)
-  m = text.match(/\bET\s+(\d{2})(\d{2})\b/);
+  m = text.match(/\bTRIP\s+\w+\s+\d+\s+(\d{2})\s*(\d{2})\b/);
   if (m) result.fltTime = m[1] + ':' + m[2];
 
   // Block time (RAMP FUEL ... TIME)
-  m = text.match(/\bRAMP FUEL\s+[\d.]+\s+(\d{2})(\d{2})/);
-  if (m) result.fdp = m[1] + ':' + m[2];
+  // FDP not auto-filled — user enters manually
 
   // Cruise FL
   m = text.match(/CRZ FL\/TEMP\s+FL(\d+)/);
@@ -1778,18 +1777,7 @@ setAd({...snapAa,v2:"",v2plus15:"",vref30:"",vfup:"",vy:"",engFail:""});setAa({.
     editing: sumLayoutEdit,
     drag: dragDep.drag,
     registerRect: dragDep.registerRect
-  }))), dragDep.ghost, React.createElement(SumSection, {
-    label: 'DEP ATIS',
-    color: S.muted,
-    onClick: goField('CCI', 'cd.atis', 'Departure', setCciSub)
-  }), React.createElement(EditAtis, {
-    label: 'DEP ATIS',
-    value: cd.atis,
-    onChange: setDepAtis,
-    locked: summaryLocked,
-    timestamp: atisTimestamps.dep,
-    onActivity: act
-  }), (hasText(cd.info) || hasText(cd.threats)) && React.createElement(SumSection, {
+  }))), dragDep.ghost, (hasText(cd.info) || hasText(cd.threats)) && React.createElement(SumSection, {
     label: 'DEP threats & info',
     color: S.orange,
     onClick: goField('CCI', 'cd.threats', 'Departure', setCciSub)
@@ -1994,18 +1982,7 @@ setAd({...snapAa,v2:"",v2plus15:"",vref30:"",vfup:"",vy:"",engFail:""});setAa({.
     editing: sumLayoutEdit,
     drag: dragArr.drag,
     registerRect: dragArr.registerRect
-  }))), dragArr.ghost, React.createElement(SumSection, {
-    label: 'ARR ATIS',
-    color: S.muted,
-    onClick: goField('CCI', 'ca.atis', 'Arrival', setCciSub)
-  }), React.createElement(EditAtis, {
-    label: 'ARR ATIS',
-    value: ca.atis,
-    onChange: setArrAtis,
-    locked: summaryLocked,
-    timestamp: atisTimestamps.arr,
-    onActivity: act
-  }), (hasText(ca.info) || hasText(ca.threats) || ca.altn) && React.createElement(SumSection, {
+  }))), dragArr.ghost, (hasText(ca.info) || hasText(ca.threats) || ca.altn) && React.createElement(SumSection, {
     label: 'ARR threats & info',
     color: S.orange,
     onClick: goField('CCI', 'ca.threats', 'Arrival', setCciSub)
