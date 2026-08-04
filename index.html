@@ -1252,14 +1252,22 @@ function parseLidoOFP(text) {
   var m;
 
   // Header: EK9920 02JUL    SEQM/UIO-TJBQ/BQN      B777F A6-EFV
-  m = text.match(/(EK\s*\d+)\s+(\d{2}[A-Z]{3})\s+\w+\/(\w+)-\w+\/(\w+)\s+(B777\w*)\s+A6-\s*([A-Z0-9]+)/);
+  // Flight number from EK line
+  m = text.match(/\bEK\s*(\d+)\b/);
+  if (m) result.flightNo = m[1];
+
+  // Registration from page header: UAE.../A6XXX OFP
+  m = text.match(/UAE\w+\/\d{2}\w+\/\w+-\w+\s+A6([A-Z]{3})\s+OFP/);
+  if (m) result.acReg = m[1];
+  else { m = text.match(/\bA6-?\s*([A-Z]{3})\b/); if (m) result.acReg = m[1]; }
+
+  // Date, dept, dest, b77 variant
+  m = text.match(/(\d{2}[A-Z]{3})/);
+  if (m) result.date = m[1];
+  m = text.match(/\w+\/(\w+)-\w+\/(\w+)\s+(B777\w*)/);
   if (m) {
-    result.flightNo = m[1].replace('EK','').replace(/\s/g,'');
-    result.date     = m[2];
-    result.dept     = m[3];
-    result.dest     = m[4];
-    result.b77      = /F/.test(m[5]) ? 'F' : /ER/.test(m[5]) ? 'ER' : /L/.test(m[5]) ? 'L' : 'W';
-    result.acReg    = m[6];
+    result.dept = m[1]; result.dest = m[2];
+    result.b77  = /F/.test(m[3]) ? 'F' : /ER/.test(m[3]) ? 'ER' : /L/.test(m[3]) ? 'L' : 'W';
   }
 
   // Full ICAO codes from header: SEQM/UIO-TJBQ/BQN
